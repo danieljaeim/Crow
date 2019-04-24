@@ -74,6 +74,13 @@ class User(db.Model):
 
     messages = db.relationship('Message')
 
+    likes = db.relationship(
+        "Message",
+        backref="users",
+        secondary="likes",
+    )
+
+
     followers = db.relationship(
         "User",
         secondary="follows",
@@ -87,6 +94,7 @@ class User(db.Model):
         primaryjoin=(Follows.user_being_followed_id == id),
         secondaryjoin=(Follows.user_following_id == id)
     )
+
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
@@ -171,6 +179,26 @@ class Message(db.Model):
     )
 
     user = db.relationship('User')
+
+class Likes(db.Model):
+    """An individual message ("warble")."""
+
+    __tablename__ = 'likes'
+
+    # id = db.Column(
+    #     db.Integer,
+    # )
+
+    user_id = db.Column(
+        db.ForeignKey('users.id', ondelete='CASCADE'),
+        primary_key=True,
+    )
+
+    message_id = db.Column(
+        db.ForeignKey('messages.id'),
+        primary_key=True,
+    )
+
 
 
 def connect_db(app):

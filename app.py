@@ -5,7 +5,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -128,7 +128,7 @@ def list_users():
 
     Can take a 'q' param in querystring to search by that username.
     """
-
+    # import pdb; pdb.set_trace()
     search = request.args.get('q')
 
     if not search:
@@ -153,7 +153,10 @@ def users_show(user_id):
                 .order_by(Message.timestamp.desc())
                 .limit(100)
                 .all())
-    return render_template('users/show.html', user=user, messages=messages)
+
+    likes = [msg.id for msg in g.user.likes]
+
+    return render_template('users/show.html', user=user, messages=messages, likes=likes)
 
 
 @app.route('/users/<int:user_id>/following')
@@ -306,8 +309,33 @@ def messages_destroy(message_id):
     return redirect(f"/users/{g.user.id}")
 
 
-##############################################################################
-# Homepage and error pages
+@app.route('/messages/<int:message_id>/like', methods=["POST"])
+def liked_message(message_id):
+
+    message = Message.query.get_or_404(message_id)
+
+    if message.id in [message.id for message in g.user.likes]:
+        unlike_msg = Likes.query.filter(Likes.user_id==g.user.id).filter(Likes.message_id==message.id).first()
+
+        db.session.delete(unlike_msg)
+        db.session.commit()
+        print('msg has been unliked')
+
+        return redirect(request.referrer)
+
+    # else:
+    new_like=Likes(user_id=g.user.id, message_id=message.id)
+    db.session.add(new_like)
+    db.session.commit()
+    print('msg has been liked')
+
+    return redirect(request.referrer)
+
+
+
+
+# ##############################################################################
+# # Homepage and error pages
 
 
 @app.route('/')
@@ -319,24 +347,25 @@ def homepage():
     """
     # import pdb; pdb.set_trace()
     if g.user:
-        messages = (Message
+        messages=(Message
                     .query
                     .filter(Message.user_id.in_([user.id for user in g.user.following] + [g.user.id]))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
+        likes = [msg.id for msg in g.user.likes]
 
-        return render_template('home.html', messages=messages)
+        return render_template('home.html', messages=messages, likes=likes)
 
     else:
         return render_template('home-anon.html')
 
 
-##############################################################################
+# ##############################################################################
 # Turn off all caching in Flask
 #   (useful for dev; in production, this kind of stuff is typically
 #   handled elsewhere)
-#
+
 # https://stackoverflow.com/questions/34066804/disabling-caching-in-flask
 
 @app.after_request
