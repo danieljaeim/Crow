@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm
+from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
 from models import db, connect_db, User, Message
 
 CURR_USER_KEY = "curr_user"
@@ -18,7 +18,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = (
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
-app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
 toolbar = DebugToolbarExtension(app)
 
@@ -113,7 +113,10 @@ def login():
 def logout():
     """Handle logout of user."""
 
-    # IMPLEMENT THIS
+    do_logout()
+    flash('You have logged out! Please come back soon.')
+
+    return redirect('/login')
 
 
 ##############################################################################
@@ -211,7 +214,31 @@ def stop_following(follow_id):
 def profile():
     """Update profile for current user."""
 
-    # IMPLEMENT THIS
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    form = EditUserForm(obj=g.user)
+
+    if form.validate_on_submit() and g.user.authenticate(g.user.username, form.password.data):
+        g.user.username = form.username.data
+        g.user.email = form.email.data
+        g.user.image_url = form.image_url.data
+        g.user.bio = form.bio.data
+        g.user.header_image_url = form.header_image_url.data
+        g.user.location = form.location.data
+
+        db.session.commit()
+
+        return redirect(f'/users/{g.user.id}')
+
+
+# come back to below lata
+    # elif not g.user.authenticate(g.user.username, form.password.data):
+    #     flash("Password is not valid!")
+
+    return render_template('/users/edit.html', form=form)
+    # if form.validate_on_submit():
 
 
 @app.route('/users/delete', methods=["POST"])
@@ -290,10 +317,11 @@ def homepage():
     - anon users: no messages
     - logged in: 100 most recent messages of followees
     """
-
+    # import pdb; pdb.set_trace()
     if g.user:
         messages = (Message
                     .query
+                    .filter(Message.user_id.in_([user.id for user in g.user.following] + [g.user.id]))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
@@ -315,8 +343,8 @@ def homepage():
 def add_header(req):
     """Add non-caching headers on every request."""
 
-    req.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    req.headers["Pragma"] = "no-cache"
-    req.headers["Expires"] = "0"
-    req.headers['Cache-Control'] = 'public, max-age=0'
+    req.headers["Cache-Control"]="no-cache, no-store, must-revalidate"
+    req.headers["Pragma"]="no-cache"
+    req.headers["Expires"]="0"
+    req.headers['Cache-Control']='public, max-age=0'
     return req
