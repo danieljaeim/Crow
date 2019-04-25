@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, request, flash, redirect, session, g
+from flask import Flask, render_template, request, flash, redirect, session, g, jsonify
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
@@ -20,6 +20,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
+app.config['WTF_CSRF_ENABLED'] = False
 toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
@@ -282,7 +283,7 @@ def messages_add():
         db.session.commit()
 
         return redirect(f"/users/{g.user.id}")
-
+    print(form.errors)
     return render_template('messages/new.html', form=form)
 
 
@@ -298,9 +299,16 @@ def messages_show(message_id):
 def messages_destroy(message_id):
     """Delete a message."""
 
+
+
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
+        
+    message_user = Message.query.get(message_id).user
+    if message_user.id != g.user.id:
+        flash("Go and kiss your mother's behind")
+        return jsonify("Go and kiss your mother's behind")
 
     msg = Message.query.get(message_id)
     db.session.delete(msg)
