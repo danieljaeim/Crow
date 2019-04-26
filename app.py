@@ -3,6 +3,7 @@ import os
 from flask import Flask, render_template, request, flash, redirect, session, g, jsonify
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
+from werkzeug.exceptions import NotFound
 
 from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
 from models import db, connect_db, User, Message, Likes
@@ -139,14 +140,14 @@ def list_users():
     return render_template('users/index.html', users=users)
 
 
-@app.route('/users/<int:user_id>')
+@app.route('/users/<int:user_id>', methods=["GET", "POST"])
 def users_show(user_id):
     """Show user profile."""
 
     user = User.query.get_or_404(user_id)
 
-    # snagging messages in order from the database;
-    # user.messages won't be in order by default
+        # snagging messages in order from the database;
+        # user.messages won't be in order by default
     messages = (Message
                 .query
                 .filter(Message.user_id == user_id)
@@ -346,22 +347,20 @@ def liked_message(message_id):
 
     message = Message.query.get_or_404(message_id)
 
+
     if message.id in [message.id for message in g.user.likes]:
         unlike_msg = Likes.query.filter(Likes.user_id==g.user.id).filter(Likes.message_id==message.id).first()
-
         db.session.delete(unlike_msg)
         db.session.commit()
-        print('msg has been unliked')
 
-        return redirect(request.referrer)
+        return jsonify({"likes": "false"})
 
     # else:
     new_like=Likes(user_id=g.user.id, message_id=message.id)
     db.session.add(new_like)
     db.session.commit()
-    print('msg has been liked')
 
-    return redirect(request.referrer)
+    return jsonify({"likes": "true"})
 
 @app.route('/user/<int:user_id>/makeadmin', methods=["POST"])
 def make_admin(user_id):
@@ -431,3 +430,8 @@ def add_header(req):
     req.headers["Expires"]="0"
     req.headers['Cache-Control']='public, max-age=0'
     return req
+
+@app.errorhandler(404)
+def page_not_found(e):
+
+    return render_template('404.html'), 404

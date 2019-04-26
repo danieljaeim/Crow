@@ -539,3 +539,20 @@ p.card-bio {
 .message-404 .form-inline input {
   flex: 1;
 }
+
+.like-button{
+  background-color: transparent;
+  position: relative;
+  left: 475px;
+  bottom: 0px;
+  z-index: 2;
+}
+.fas fa-star{
+  opacity: 1;
+}
+
+.liked-button{
+  position: absolute;
+  right: 0px;
+  bottom: 0px
+}

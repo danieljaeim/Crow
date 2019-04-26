@@ -36,6 +36,19 @@
             <span class="text-muted">{{ message.timestamp.strftime('%d %B %Y') }}</span>
           </div>
         </li>
+        <div class='liked-button'>
+            <form class="like_form" id="{{message.id}}">
+              {% if message.id in likes %}
+              <button type="submit" class="btn shadow-none">
+                <i class="fas fa-star"></i>
+              </button>
+              {% else %}
+              <button type="submit" class="btn shadow-none">
+                <i class="far fa-star"></i>
+              </button>
+              {% endif %}
+            </form>
+          </div>
       </ul>
     </div>
 </div>
