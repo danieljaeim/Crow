@@ -129,7 +129,6 @@ def list_users():
 
     Can take a 'q' param in querystring to search by that username.
     """
-    # import pdb; pdb.set_trace()
     search = request.args.get('q')
 
     if not search:
@@ -214,49 +213,72 @@ def stop_following(follow_id):
     return redirect(f"/users/{g.user.id}/following")
 
 
-@app.route('/users/profile', methods=["GET", "POST"])
-def profile():
+@app.route('/users/<int:user_id>/profile', methods=["GET", "POST"])
+def profile(user_id):
     """Update profile for current user."""
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    form = EditUserForm(obj=g.user)
+    user = User.query.get_or_404(user_id) 
+    form = EditUserForm(obj=user)
 
-    if form.validate_on_submit() and g.user.authenticate(g.user.username, form.password.data):
-        g.user.username = form.username.data
-        g.user.email = form.email.data
-        g.user.image_url = form.image_url.data
-        g.user.bio = form.bio.data
-        g.user.header_image_url = form.header_image_url.data
-        g.user.location = form.location.data
+    if form.validate_on_submit() and g.user.is_admin is False and g.user.authenticate(g.user.username, form.password.data):
+        user.username = form.username.data
+        user.email = form.email.data
+        user.image_url = form.image_url.data
+        user.bio = form.bio.data
+        user.header_image_url = form.header_image_url.data
+        user.location = form.location.data
 
         db.session.commit()
 
-        return redirect(f'/users/{g.user.id}')
+        return redirect(f'/users/{user.id}')
+
+    elif form.validate_on_submit() and g.user.is_admin is True:
+        user.username = form.username.data
+        user.email = form.email.data
+        user.image_url = form.image_url.data
+        user.bio = form.bio.data
+        user.header_image_url = form.header_image_url.data
+        user.location = form.location.data
+
+        db.session.commit()
+
+        return redirect(f'/users/{user.id}')
 
 
 # come back to below lata
     # elif not g.user.authenticate(g.user.username, form.password.data):
     #     flash("Password is not valid!")
 
-    return render_template('/users/edit.html', form=form)
+    return render_template('/users/edit.html', form=form, user=user)
     # if form.validate_on_submit():
 
 
-@app.route('/users/delete', methods=["POST"])
-def delete_user():
+@app.route('/users/<int:user_id>/delete', methods=["POST"])
+def delete_user(user_id):
     """Delete user."""
+
+    cur_user = User.query.get_or_404(user_id)
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    do_logout()
+    if user_id != g.user.id and g.user.is_admin is False:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
 
-    db.session.delete(g.user)
+    if user_id == g.user.id:
+        do_logout()
+    
+    db.session.delete(cur_user)
     db.session.commit()
+
+    if g.user.is_admin is True:
+        return redirect(f'users/{g.user.id}')
 
     return redirect("/signup")
 
@@ -280,10 +302,11 @@ def messages_add():
     if form.validate_on_submit():
         msg = Message(text=form.text.data)
         g.user.messages.append(msg)
+        db.session.add(msg)
         db.session.commit()
 
         return redirect(f"/users/{g.user.id}")
-    print(form.errors)
+ 
     return render_template('messages/new.html', form=form)
 
 
@@ -306,7 +329,8 @@ def messages_destroy(message_id):
         return redirect("/")
         
     message_user = Message.query.get(message_id).user
-    if message_user.id != g.user.id:
+    
+    if message_user.id != g.user.id and g.user.is_admin is False:
         flash("Go and kiss your mother's behind")
         return jsonify("Go and kiss your mother's behind")
 
@@ -338,6 +362,28 @@ def liked_message(message_id):
     print('msg has been liked')
 
     return redirect(request.referrer)
+
+@app.route('/user/<int:user_id>/makeadmin', methods=["POST"])
+def make_admin(user_id):
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get_or_404(user_id)
+
+    if g.user.id != user_id:
+        return redirect(f'users/{user_id}')
+
+    if user.is_admin is False:
+        user.is_admin = True
+
+        db.session.commit()
+
+    return redirect(f'users/{user_id}')
+    
+        
+
 
 
 

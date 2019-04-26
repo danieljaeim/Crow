@@ -15,6 +15,7 @@
           {{ field(placeholder=field.label.text, class="form-control") }}
         {% endfor %}
 
+        {% if g.user.is_admin == False %}
         <p>To confirm changes, enter your password:</p>
         {% if form.password.errors %}
           {% for error in form.password.errors %}
@@ -24,13 +25,24 @@
           {% endfor %}
         {% endif %}
         {{ form.password(placeholder="Enter your password to confirm", class="form-control") }}
+        {% endif %}
 
         <div class="edit-btn-area">
           <button class="btn btn-success">Edit this user!</button>
-          <a href="/users/{{ user_id }}" class="btn btn-outline-secondary">Cancel</a>
+          <a href="/users" class="btn btn-outline-secondary">Cancel</a>
         </div>
       </form>
     </div>
-  </div>
+    <div>
 
+  </div>
+</div>
+
+{% if g.user.is_admin %}
+<div class="row justify-content-md-center mt-5">
+<form action="/user/{{ user.id }}/makeadmin" method="POST">
+  <button class='btn btn-success'>Make an Admin</button>
+</form>
+</div>
+{% endif %}
 {% endblock %}

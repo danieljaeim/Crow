@@ -5,6 +5,7 @@ from datetime import datetime
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 
+
 bcrypt = Bcrypt()
 db = SQLAlchemy()
 
@@ -72,7 +73,15 @@ class User(db.Model):
         nullable=False,
     )
 
-    messages = db.relationship('Message')
+    is_admin = db.Column(
+        db.Boolean,
+        default=False
+    )
+
+    # note to self below - copied code to make user profile delete functionality work
+    # slow down - copied incorrectly the code 
+
+    messages = db.relationship('Message', cascade="delete") 
 
     likes = db.relationship(
         "Message",
@@ -81,18 +90,19 @@ class User(db.Model):
     )
 
 
-    following = db.relationship(
-        "User",
-        secondary="follows",
-        primaryjoin=(Follows.user_following_id == id),
-        secondaryjoin=(Follows.user_being_followed_id == id)
-    )
-
     followers = db.relationship(
         "User",
         secondary="follows",
+        primaryjoin=(Follows.user_following_id == id),
+        secondaryjoin=(Follows.user_being_followed_id == id),
+
+    )
+
+    following = db.relationship(
+        "User",
+        secondary="follows",
         primaryjoin=(Follows.user_being_followed_id == id),
-        secondaryjoin=(Follows.user_following_id == id)
+        secondaryjoin=(Follows.user_following_id == id),
     )
 
 
@@ -190,7 +200,7 @@ class Likes(db.Model):
     # )
 
     user_id = db.Column(
-        db.ForeignKey('users.id', ondelete='CASCADE'),
+        db.ForeignKey('users.id', ondelete='cascade'),
         primary_key=True,
     )
 

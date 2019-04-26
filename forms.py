@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField
+from wtforms import StringField, PasswordField, TextAreaField, BooleanField
 from wtforms.validators import DataRequired, Email, Length, Optional, URL
 
 
@@ -33,3 +33,4 @@ class EditUserForm(FlaskForm):
     header_image_url = StringField('Header Image URL', validators=[URL()]) 
     location = StringField('Location', validators=[Optional()])
     bio = TextAreaField('bio', validators=[Optional()])
+
