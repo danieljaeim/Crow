@@ -1,4 +1,4 @@
-"""Generate CSVs of random data for Warbler.
+"""Generate CSVs of random data for CROW.
 
 Students won't need to run this for the exercise; they will just use the CSV
 files that this generates. You should only need to run this if you wanted to
@@ -12,9 +12,9 @@ import requests
 from faker import Faker
 from helpers import get_random_datetime
 
-MAX_WARBLER_LENGTH = 140
+MAX_CROW_LENGTH = 140
 
-USERS_CSV_HEADERS = ['email', 'username', 'image_url', 'password', 'bio', 'header_image_url', 'location']
+USERS_CSV_HEADERS = ['email', 'username', 'image_url', 'password', 'bio', 'header_image_url', 'location', 'is_admin']
 MESSAGES_CSV_HEADERS = ['text', 'timestamp', 'user_id']
 FOLLOWS_CSV_HEADERS = ['user_being_followed_id', 'user_following_id']
 
@@ -51,7 +51,8 @@ with open('generator/users.csv', 'w') as users_csv:
             password='$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe',
             bio=fake.sentence(),
             header_image_url=choice(header_image_urls),
-            location=fake.city()
+            location=fake.city(),
+            is_admin=false
         ))
 
 with open('generator/messages.csv', 'w') as messages_csv:
@@ -60,7 +61,7 @@ with open('generator/messages.csv', 'w') as messages_csv:
 
     for i in range(NUM_MESSAGES):
         messages_writer.writerow(dict(
-            text=fake.paragraph()[:MAX_WARBLER_LENGTH],
+            text=fake.paragraph()[:MAX_CROW_LENGTH],
             timestamp=get_random_datetime(),
             user_id=randint(1, NUM_USERS)
         ))

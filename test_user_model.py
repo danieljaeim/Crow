@@ -4,7 +4,6 @@
 #
 #    python -m unittest test_user_model.py
 
-
 import os
 from unittest import TestCase
 from models import db, User, Message, Follows, connect_db

@@ -1,4 +1,4 @@
-"""SQLAlchemy models for Warbler."""
+"""SQLAlchemy models for Crow."""
 
 from datetime import datetime
 
@@ -57,7 +57,7 @@ class User(db.Model):
 
     header_image_url = db.Column(
         db.Text,
-        default="/static/images/warbler-hero.jpg"
+        default="/static/images/banner.jpg"
     )
 
     bio = db.Column(
